@@ -2,6 +2,7 @@
 ffmpeg.exe
 ffprobe.exe
 *.exe
+!MusicDownloader.exe
 
 # Python
 __pycache__/

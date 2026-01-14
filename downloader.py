@@ -11,11 +11,16 @@ from concurrent.futures import ThreadPoolExecutor
 import spotipy
 from spotipy.oauth2 import SpotifyClientCredentials
 
+import zipfile
+import shutil
+import io
+
 HISTORY_FILE = "history.json"
 CONFIG_FILE = "config.json"
 MAX_CONCURRENT_DOWNLOADS = 3
 
 class ConfigManager:
+    # ... (unchanged)
     def __init__(self):
         self.config = {}
         self.load_config()
@@ -74,6 +79,7 @@ class SettingsDialog(tk.Toplevel):
         self.destroy()
 
 class HistoryManager:
+    # ... (unchanged)
     def __init__(self):
         self.history = []
         self.load_history()
@@ -105,6 +111,9 @@ class DownloaderApp:
         self.root.title("Advanced YouTube Downloader")
         self.root.geometry("900x600")
         
+        # Check Dependencies (Auto-Setup)
+        self.check_dependencies()
+
         # Data
         self.config_manager = ConfigManager()
         self.history_manager = HistoryManager()
@@ -122,8 +131,76 @@ class DownloaderApp:
         # UI Layout
         self.create_widgets()
         
-        # Periodic update for queue management if needed (mostly event driven though)
+        # Handle Window Close
+        self.root.protocol("WM_DELETE_WINDOW", self.on_closing)
 
+    def on_closing(self):
+        if messagebox.askokcancel("Quit", "Do you want to quit?"):
+            # Force kill process to ensure all threads/ffmpeg stop
+            self.root.destroy()
+            os._exit(0)
+
+    def check_dependencies(self):
+        # Check for FFmpeg
+        ffmpeg_exists = os.path.exists("ffmpeg.exe")
+        ffprobe_exists = os.path.exists("ffprobe.exe")
+        
+        if not ffmpeg_exists or not ffprobe_exists:
+            self.perform_auto_setup()
+
+    def perform_auto_setup(self):
+        setup_win = tk.Toplevel(self.root)
+        setup_win.title("First Time Setup")
+        setup_win.geometry("400x150")
+        setup_win.resizable(False, False)
+        
+        # Make modal
+        setup_win.transient(self.root)
+        setup_win.grab_set()
+        
+        ttk.Label(setup_win, text="Installing Dependencies...", font=("Segoe UI", 12, "bold")).pack(pady=(20, 10))
+        ttk.Label(setup_win, text="Downloading FFmpeg (Required for Media Processing)\nThis may take a minute...", justify="center").pack(pady=5)
+        
+        progress = ttk.Progressbar(setup_win, mode='indeterminate')
+        progress.pack(fill=tk.X, padx=30, pady=10)
+        progress.start(10)
+        
+        def download_thread():
+            try:
+                url = "https://www.gyan.dev/ffmpeg/builds/ffmpeg-release-essentials.zip"
+                print(f"Downloading {url}...")
+                
+                # Stream download
+                r = requests.get(url, stream=True)
+                z = zipfile.ZipFile(io.BytesIO(r.content))
+                
+                # Extract only bin/ffmpeg.exe and bin/ffprobe.exe
+                # Structure is typically: ffmpeg-ver-essentials/bin/ffmpeg.exe
+                
+                extracted_count = 0
+                for file_info in z.infolist():
+                    if file_info.filename.endswith("bin/ffmpeg.exe") or file_info.filename.endswith("bin/ffprobe.exe"):
+                        # Extract file
+                        file_info.filename = os.path.basename(file_info.filename) # Flatten path
+                        z.extract(file_info, os.getcwd())
+                        extracted_count += 1
+                        
+                if extracted_count >= 2:
+                    messagebox.showinfo("Setup Complete", "Dependencies installed successfully!")
+                else:
+                    messagebox.showerror("Setup Error", "Could not find FFmpeg binaries in downloaded zip.")
+                    
+            except Exception as e:
+                messagebox.showerror("Setup Error", f"Failed to download FFmpeg:\n{str(e)}")
+            finally:
+                setup_win.destroy()
+        
+        threading.Thread(target=download_thread, daemon=True).start()
+        
+        # Wait for window to close before continuing main init? 
+        # Actually tk.Tk() is running, so we just wait.
+        self.root.wait_window(setup_win)
+        
     def create_widgets(self):
         # Top Bar for Settings
         top_bar = ttk.Frame(self.root, padding=5)

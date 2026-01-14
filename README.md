@@ -9,42 +9,38 @@ A powerful and user-friendly desktop application to download music and videos fr
 - **History**: Keep track of your downloads.
 - **Auto-meta**: Automatically adds metadata to downloaded files.
 
-## 🛠️ Requirements
+## 🚀 Download & Run (Easiest)
 
-To run this application, an end-user needs:
+**No setup required!**
 
-1.  **Windows OS** (Recommended for the provided batch launcher).
-2.  **Python 3.10+**: [Download Here](https://www.python.org/downloads/).
-    *   *Make sure to check "Add Python to PATH" during installation.*
-3.  **FFmpeg**: Required for MP3 conversion.
-    *   Download `ffmpeg.exe` and `ffprobe.exe` (from [gyan.dev](https://www.gyan.dev/ffmpeg/builds/)) and place them in the project folder.
-    *   *(Alternatively, install them system-wide and add to PATH).*
+1.  Download **`MusicDownloader.exe`** from the repository.
+2.  Double-click to run.
+3.  *First Run Note*: The app will automatically download necessary components (FFmpeg) if they are missing.
 
-## 🚀 Installation & Setup
+---
 
-1.  **Clone the valid repo**:
+## 🛠️ Developer / Source Code Setup
+
+If you prefer to run the raw Python code:
+
+1.  **Clone the repo**:
     ```bash
     git clone https://github.com/ZephyrAmr/MusicDownloader.git
     cd MusicDownloader
     ```
 
 2.  **Install Dependencies**:
-    Open a terminal in the folder and run:
     ```bash
     pip install -r requirements.txt
     ```
 
-3.  **FFmpeg Check**:
-    Ensure `ffmpeg.exe` and `ffprobe.exe` are in the same folder as `downloader.py`.
+3.  **Run**:
+    ```bash
+    python downloader.py
+    ```
 
-## ▶️ How to Run
+## ▶️ Features
 
-Simply double-click **`start.bat`** to launch the application.
-
-*Or run via command line:*
-```bash
-python downloader.py
-```
 
 ## 📝 Usage
 1.  Paste a **YouTube Video/Playlist** OR **Spotify Playlist** URL.
