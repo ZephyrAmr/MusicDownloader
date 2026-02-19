@@ -85,25 +85,69 @@ class HistoryManager:
         self.load_history()
 
     def load_history(self):
+        self.history = []
         if os.path.exists(HISTORY_FILE):
             try:
                 with open(HISTORY_FILE, 'r') as f:
-                    self.history = json.load(f)
-            except:
+                    # Check first character for format detection
+                    first_char = f.read(1)
+                    if not first_char:
+                        return
+
+                    f.seek(0)
+                    if first_char == '[':
+                        self.history = json.load(f)
+                    else:
+                        # JSON Lines format: one JSON object per line, chronological order
+                        for line in f:
+                            if line.strip():
+                                self.history.append(json.loads(line))
+                        # Reverse to maintain newest-first in memory
+                        self.history.reverse()
+            except Exception as e:
+                print(f"Error loading history: {e}")
                 self.history = []
 
     def add_entry(self, entry):
         # Entry: {date, title, url, format, path}
         self.history.insert(0, entry)
-        self.save_history()
+        # Optimized: Append only the new entry to the file instead of rewriting everything.
+        # We append to the end of the file for efficiency (O(1)).
+        try:
+            # If the file is still in the old JSON array format, we must convert it first.
+            is_old_format = False
+            if os.path.exists(HISTORY_FILE) and os.path.getsize(HISTORY_FILE) > 0:
+                with open(HISTORY_FILE, 'r') as f:
+                    if f.read(1) == '[':
+                        is_old_format = True
+
+            if is_old_format:
+                self.save_history()
+            else:
+                with open(HISTORY_FILE, 'a') as f:
+                    f.write(json.dumps(entry) + '\n')
+        except Exception:
+            # Fallback to full save if something goes wrong
+            self.save_history()
 
     def save_history(self):
-        with open(HISTORY_FILE, 'w') as f:
-            json.dump(self.history, f, indent=4)
+        # Rewrite the entire file in JSON Lines format (one JSON object per line).
+        # We store them in chronological order in the file for easy appending.
+        try:
+            with open(HISTORY_FILE, 'w') as f:
+                for entry in reversed(self.history):
+                    f.write(json.dumps(entry) + '\n')
+        except Exception as e:
+            print(f"Error saving history: {e}")
 
     def clear(self):
         self.history = []
-        self.save_history()
+        # Truncate the file
+        try:
+            with open(HISTORY_FILE, 'w') as f:
+                pass
+        except Exception as e:
+            print(f"Error clearing history: {e}")
 
 class DownloaderApp:
     def __init__(self, root):
