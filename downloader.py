@@ -30,7 +30,7 @@ class ConfigManager:
             try:
                 with open(CONFIG_FILE, 'r') as f:
                     self.config = json.load(f)
-            except:
+            except (json.JSONDecodeError, OSError):
                 self.config = {}
 
     def save_config(self):
@@ -89,7 +89,7 @@ class HistoryManager:
             try:
                 with open(HISTORY_FILE, 'r') as f:
                     self.history = json.load(f)
-            except:
+            except (json.JSONDecodeError, OSError):
                 self.history = []
 
     def add_entry(self, entry):
@@ -418,7 +418,7 @@ class DownloaderApp:
                                          
                                  if name:
                                      tracks.append(f"{artist_str} - {name}")
-                             except:
+                             except Exception:
                                  continue
 
                     self.update_task(task_id, status=f"Found {len(tracks)} songs...")
@@ -543,7 +543,7 @@ class DownloaderApp:
             if 'speed' in kwargs: new_values[5] = kwargs['speed']
             
             self.tree_active.item(task_id, values=new_values)
-        except:
+        except tk.TclError:
             pass
 
     def refresh_history_ui(self):
@@ -577,7 +577,7 @@ if __name__ == "__main__":
     try:
         from ctypes import windll
         windll.shcore.SetProcessDpiAwareness(1)
-    except:
+    except Exception:
         pass
         
     app = DownloaderApp(root)
